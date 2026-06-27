@@ -1,0 +1,90 @@
+{% extends 'store/base.html' %}
+{% load static %}
+
+{% block title %}Order Confirmed! — ShopZen{% endblock %}
+
+{% block content %}
+<div class="success-page">
+    <div class="container">
+        <div class="success-card">
+            <!-- Animated Checkmark -->
+            <div class="success-icon">
+                <div class="checkmark-circle">
+                    <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                        <circle class="checkmark-circle-bg" cx="26" cy="26" r="25" fill="none"/>
+                        <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                    </svg>
+                </div>
+            </div>
+
+            <h1 class="success-title">Order Confirmed!</h1>
+            <p class="success-subtitle">
+                Thank you, <strong>{{ order.first_name }}</strong>! Your order has been placed successfully.
+            </p>
+
+            <div class="order-info-badge">
+                <span>Order #</span>
+                <strong>{{ order.id }}</strong>
+            </div>
+
+            <!-- Order Details -->
+            <div class="success-details-grid">
+                <div class="success-detail-card">
+                    <h4><i class="fas fa-map-marker-alt"></i> Shipping To</h4>
+                    <p>
+                        {{ order.first_name }} {{ order.last_name }}<br>
+                        {{ order.address }}<br>
+                        {{ order.city }}, {{ order.state }} {{ order.zip_code }}<br>
+                        {{ order.country }}
+                    </p>
+                </div>
+                <div class="success-detail-card">
+                    <h4><i class="fas fa-info-circle"></i> Order Info</h4>
+                    <p>
+                        <strong>Status:</strong>
+                        <span class="status-badge status-{{ order.status }}">{{ order.get_status_display }}</span><br>
+                        <strong>Date:</strong> {{ order.created_at|date:"F d, Y" }}<br>
+                        <strong>Email:</strong> {{ order.email }}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Order Items -->
+            <div class="success-items">
+                <h3>Items Ordered</h3>
+                <div class="success-items-list">
+                    {% for item in order.items.all %}
+                    <div class="success-item">
+                        <span class="success-item-name">
+                            <i class="fas fa-box"></i> {{ item.product_name }}
+                        </span>
+                        <span class="success-item-qty">x{{ item.quantity }}</span>
+                        <span class="success-item-price">${{ item.subtotal }}</span>
+                    </div>
+                    {% endfor %}
+                    <div class="success-item total-item">
+                        <span><strong>Total</strong></span>
+                        <span></span>
+                        <span><strong>${{ order.total_price }}</strong></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="success-actions">
+                <a href="{% url 'profile' %}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-list-alt"></i> View My Orders
+                </a>
+                <a href="{% url 'product_list' %}" class="btn btn-outline btn-lg">
+                    <i class="fas fa-store"></i> Continue Shopping
+                </a>
+            </div>
+
+            <p class="success-note">
+                <i class="fas fa-envelope"></i>
+                A confirmation email has been sent to <strong>{{ order.email }}</strong>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

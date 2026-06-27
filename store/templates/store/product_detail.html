@@ -1,0 +1,246 @@
+{% extends 'store/base.html' %}
+{% load static %}
+
+{% block title %}{{ product.name }} — ShopZen{% endblock %}
+{% block meta_description %}{{ product.description|truncatewords:25 }}{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: 100px;">
+
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb" aria-label="breadcrumb">
+        <a href="{% url 'home' %}">Home</a>
+        <i class="fas fa-chevron-right"></i>
+        <a href="{% url 'product_list' %}">Products</a>
+        {% if product.category %}
+        <i class="fas fa-chevron-right"></i>
+        <a href="{% url 'product_list' %}?category={{ product.category.slug }}">{{ product.category.name }}</a>
+        {% endif %}
+        <i class="fas fa-chevron-right"></i>
+        <span>{{ product.name }}</span>
+    </nav>
+
+    <!-- ── Product Detail ── -->
+    <div class="product-detail-layout">
+        <!-- Image Section -->
+        <div class="product-detail-image">
+            <div class="product-main-image">
+                {% if product.image %}
+                <img src="{{ product.image.url }}" alt="{{ product.name }}" id="main-product-img">
+                {% else %}
+                <div class="product-image-placeholder large">
+                    <i class="fas fa-image"></i>
+                    <p>No image available</p>
+                </div>
+                {% endif %}
+                {% if product.discount_percent > 0 %}
+                <span class="badge-sale large">-{{ product.discount_percent }}% OFF</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Info Section -->
+        <div class="product-detail-info">
+            {% if product.category %}
+            <a href="{% url 'product_list' %}?category={{ product.category.slug }}" class="product-category-tag">
+                <i class="fas {{ product.category.icon|default:'fa-tag' }}"></i> {{ product.category.name }}
+            </a>
+            {% endif %}
+
+            <h1 class="detail-product-title">{{ product.name }}</h1>
+
+            <!-- Reviews Summary -->
+            {% if reviews %}
+            <div class="review-summary">
+                <div class="stars">
+                    {% with avg=reviews.0.rating %}
+                    {% for i in "12345" %}
+                    <i class="fas fa-star {% if forloop.counter <= avg %}lit{% endif %}"></i>
+                    {% endfor %}
+                    {% endwith %}
+                </div>
+                <span>({{ reviews|length }} review{{ reviews|length|pluralize }})</span>
+            </div>
+            {% endif %}
+
+            <!-- Price -->
+            <div class="detail-price">
+                {% if product.sale_price %}
+                <span class="detail-price-sale">${{ product.sale_price }}</span>
+                <span class="detail-price-original">${{ product.price }}</span>
+                <span class="detail-discount-badge">Save ${{ product.price|floatformat:2 }}</span>
+                {% else %}
+                <span class="detail-price-sale">${{ product.price }}</span>
+                {% endif %}
+            </div>
+
+            <!-- Stock Status -->
+            <div class="detail-stock {% if product.in_stock %}in-stock{% else %}out-stock{% endif %}">
+                <i class="fas {% if product.in_stock %}fa-check-circle{% else %}fa-times-circle{% endif %}"></i>
+                {% if product.in_stock %}In Stock — {{ product.stock }} units available{% else %}Out of Stock{% endif %}
+            </div>
+
+            <!-- Description -->
+            <div class="detail-description">
+                <h3>Description</h3>
+                <p>{{ product.description }}</p>
+            </div>
+
+            <!-- Add to Cart -->
+            {% if product.in_stock %}
+            <div class="detail-cart-section">
+                <div class="qty-control">
+                    <button class="qty-btn" onclick="changeQty(-1)" id="qty-minus">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <input type="number" id="detail-qty" value="1" min="1" max="{{ product.stock }}" class="qty-input" readonly>
+                    <button class="qty-btn" onclick="changeQty(1)" id="qty-plus">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+                <button class="btn btn-primary btn-lg add-cart-btn"
+                        id="detail-add-cart"
+                        onclick="addToCartDetail({{ product.id }})">
+                    <i class="fas fa-cart-plus"></i> Add to Cart
+                </button>
+            </div>
+            <a href="{% url 'cart' %}" class="btn btn-outline btn-lg" style="margin-top:12px; display:block; text-align:center;">
+                <i class="fas fa-shopping-bag"></i> View Cart & Checkout
+            </a>
+            {% else %}
+            <button class="btn btn-primary btn-lg disabled" disabled style="width:100%;">
+                <i class="fas fa-times-circle"></i> Out of Stock
+            </button>
+            {% endif %}
+
+            <!-- Product Perks -->
+            <div class="product-perks">
+                <div class="perk"><i class="fas fa-shipping-fast"></i> <span>Free shipping on orders $50+</span></div>
+                <div class="perk"><i class="fas fa-shield-alt"></i> <span>Secure checkout</span></div>
+                <div class="perk"><i class="fas fa-undo-alt"></i> <span>30-day free returns</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Reviews Section ── -->
+    <div class="reviews-section">
+        <h2 class="section-title">Customer <span class="gradient-text">Reviews</span></h2>
+
+        {% if user.is_authenticated %}
+        <!-- Write Review -->
+        <div class="write-review-card">
+            <h3>{% if user_review %}Update Your Review{% else %}Write a Review{% endif %}</h3>
+            <form method="post" action="{% url 'product_detail' product.slug %}">
+                {% csrf_token %}
+                <div class="star-rating-input">
+                    <span>Rating:</span>
+                    {% for i in "54321" %}
+                    <input type="radio" name="rating" id="star{{ i }}" value="{{ i }}"
+                           {% if user_review and user_review.rating == i|add:"0" %}checked{% endif %}>
+                    <label for="star{{ i }}"><i class="fas fa-star"></i></label>
+                    {% endfor %}
+                </div>
+                <textarea name="comment" class="form-control" rows="3"
+                          placeholder="Share your experience with this product...">{% if user_review %}{{ user_review.comment }}{% endif %}</textarea>
+                <button type="submit" class="btn btn-primary" style="margin-top:12px;">
+                    <i class="fas fa-paper-plane"></i> Submit Review
+                </button>
+            </form>
+        </div>
+        {% else %}
+        <div class="login-prompt">
+            <i class="fas fa-user-circle"></i>
+            <p><a href="{% url 'login' %}?next={% url 'product_detail' product.slug %}">Login</a> to write a review</p>
+        </div>
+        {% endif %}
+
+        <!-- Reviews List -->
+        {% if reviews %}
+        <div class="reviews-list">
+            {% for review in reviews %}
+            <div class="review-card">
+                <div class="review-header">
+                    <div class="reviewer-avatar">{{ review.user.username|first|upper }}</div>
+                    <div class="reviewer-info">
+                        <strong>{{ review.user.get_full_name|default:review.user.username }}</strong>
+                        <span class="review-date">{{ review.created_at|date:"M d, Y" }}</span>
+                    </div>
+                    <div class="review-stars">
+                        {% for i in "12345" %}
+                        <i class="fas fa-star {% if forloop.counter <= review.rating %}lit{% endif %}"></i>
+                        {% endfor %}
+                    </div>
+                </div>
+                <p class="review-comment">{{ review.comment }}</p>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state small">
+            <i class="fas fa-comment-slash"></i>
+            <p>No reviews yet. Be the first to review this product!</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- ── Related Products ── -->
+    {% if related_products %}
+    <div class="related-section">
+        <h2 class="section-title">Related <span class="gradient-text">Products</span></h2>
+        <div class="products-grid">
+            {% for product in related_products %}
+            <div class="product-card">
+                <div class="product-image-wrap">
+                    {% if product.image %}
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-image" loading="lazy">
+                    {% else %}
+                    <div class="product-image-placeholder"><i class="fas fa-image"></i></div>
+                    {% endif %}
+                    {% if product.discount_percent > 0 %}
+                    <span class="badge-sale">-{{ product.discount_percent }}%</span>
+                    {% endif %}
+                </div>
+                <div class="product-info">
+                    <h3 class="product-name"><a href="{% url 'product_detail' product.slug %}">{{ product.name }}</a></h3>
+                    <div class="product-price">
+                        {% if product.sale_price %}
+                        <span class="price-sale">${{ product.sale_price }}</span>
+                        <span class="price-original">${{ product.price }}</span>
+                        {% else %}
+                        <span class="price-sale">${{ product.price }}</span>
+                        {% endif %}
+                    </div>
+                    {% if product.in_stock %}
+                    <button class="btn-add-cart" onclick="addToCart({{ product.id }}, 1, this)">
+                        <i class="fas fa-cart-plus"></i> Add to Cart
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function changeQty(delta) {
+    const input = document.getElementById('detail-qty');
+    const max = parseInt(input.max);
+    let val = parseInt(input.value) + delta;
+    if (val < 1) val = 1;
+    if (val > max) val = max;
+    input.value = val;
+}
+
+function addToCartDetail(productId) {
+    const qty = parseInt(document.getElementById('detail-qty').value);
+    const btn = document.getElementById('detail-add-cart');
+    addToCart(productId, qty, btn);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,109 @@
+{% extends 'store/base.html' %}
+{% load static %}
+
+{% block title %}My Profile — ShopZen{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1 class="page-title">My Account</h1>
+        <p class="page-subtitle">Welcome back, {{ user.first_name|default:user.username }}!</p>
+    </div>
+</div>
+
+<div class="container">
+    <div class="profile-layout">
+        <!-- ── Sidebar ── -->
+        <aside class="profile-sidebar">
+            <div class="profile-card">
+                <div class="profile-avatar">
+                    {{ user.username|first|upper }}
+                </div>
+                <h3>{{ user.get_full_name|default:user.username }}</h3>
+                <span class="profile-email">{{ user.email }}</span>
+                <span class="member-since">Member since {{ user.date_joined|date:"M Y" }}</span>
+            </div>
+
+            <div class="profile-nav-card">
+                <a href="{% url 'profile' %}" class="profile-nav-item active">
+                    <i class="fas fa-list-alt"></i> My Orders
+                </a>
+                <a href="{% url 'product_list' %}" class="profile-nav-item">
+                    <i class="fas fa-store"></i> Shop
+                </a>
+                {% if user.is_staff %}
+                <a href="/admin/" class="profile-nav-item">
+                    <i class="fas fa-shield-alt"></i> Admin Panel
+                </a>
+                {% endif %}
+                <a href="{% url 'logout' %}" class="profile-nav-item logout">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        </aside>
+
+        <!-- ── Orders ── -->
+        <div class="profile-main">
+            <h2 class="profile-section-title">
+                <i class="fas fa-shopping-bag"></i> Order History
+            </h2>
+
+            {% if orders %}
+            <div class="orders-list">
+                {% for order in orders %}
+                <div class="order-card">
+                    <div class="order-card-header">
+                        <div class="order-id">
+                            <i class="fas fa-hashtag"></i>
+                            <strong>Order #{{ order.id }}</strong>
+                        </div>
+                        <div class="order-meta">
+                            <span class="order-date">
+                                <i class="fas fa-calendar"></i>
+                                {{ order.created_at|date:"M d, Y" }}
+                            </span>
+                            <span class="status-badge status-{{ order.status }}">
+                                {{ order.get_status_display }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="order-items-preview">
+                        {% for item in order.items.all %}
+                        <div class="order-item-row">
+                            <span class="order-item-name">
+                                <i class="fas fa-box"></i> {{ item.product_name }}
+                            </span>
+                            <span class="order-item-qty">x{{ item.quantity }}</span>
+                            <span class="order-item-price">${{ item.subtotal }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="order-card-footer">
+                        <div class="order-shipping">
+                            <i class="fas fa-map-marker-alt"></i>
+                            {{ order.address }}, {{ order.city }}, {{ order.country }}
+                        </div>
+                        <div class="order-total">
+                            Total: <strong>${{ order.total_price }}</strong>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-shopping-bag"></i>
+                <h3>No Orders Yet</h3>
+                <p>You haven't placed any orders yet. Start shopping!</p>
+                <a href="{% url 'product_list' %}" class="btn btn-primary">
+                    <i class="fas fa-store"></i> Start Shopping
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
